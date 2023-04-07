@@ -1,0 +1,203 @@
+h1 {
+    color:black;
+    font-family:Bernard MT Condensed;
+    font-size:300%;
+	text-align: center;
+	letter-spacing: 10px;
+}
+hr { 
+    display: block;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: auto;
+    margin-right: auto;
+    border-width: thick;
+} 
+h2 {
+    color:black;
+    font-size:200%;
+	text-align: left;
+}
+h3.story {
+    border: none;
+    color: white;
+    padding-left: 0.25cm;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 1px;
+    text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000; 
+}
+label {
+    color:black;
+    font-size:125%;
+	text-align: left;
+}
+table, td {
+    border: none;
+    padding: 1px;
+}
+th {
+    text-align: left;
+    padding: 2px;
+}
+p.error {
+    color: red;
+}
+p.notice {
+    color: blue;
+}
+p.infoLine{
+    background-color: lightgrey;
+    font-style: italic;
+    width: 500px;
+}
+p.infoLineinComment{
+    font-style: italic;
+    width: 500px;
+    padding: 0px;
+    margin: 0px;
+}
+
+input.storytitlePolitics{
+    background-color: red;
+    cursor: pointer;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 1px;
+    text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000; 
+}
+input.storytitlePolitics:hover {
+    text-decoration: underline;
+}
+#Politics {
+    background-color: red;
+}
+
+input.storytitleSports{
+    background-color: green;
+    cursor: pointer;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 1px;
+    text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000; 
+}
+input.storytitleSports:hover {
+    text-decoration: underline;
+}
+#Sports {
+    background-color: green;
+}
+
+input.storytitleEntertainment{
+    background-color: yellow;
+    cursor: pointer;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 1px;
+    text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000; 
+}
+input.storytitleEntertainment:hover {
+    text-decoration: underline;
+}
+#Entertainment {
+    background-color: yellow;
+}
+
+input.storytitleWorld{
+    background-color: orange;
+    cursor: pointer;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 1px;
+    text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000; 
+}
+input.storytitleWorld:hover {
+    text-decoration: underline;
+}
+#World {
+    background-color: orange;
+}
+
+input.storytitleTechnology{
+    background-color: gray;
+    cursor: pointer;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 1px;
+    text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000; 
+}
+input.storytitleTechnology:hover {
+    text-decoration: underline;
+}
+#Technology {
+    background-color: gray;
+}
+
+form.uploadStory {
+    vertical-align: text-top;
+    font-size:115%;
+    width: auto;
+    padding: 5px;
+}
+input.uploadStoryinput {
+    width: 500px;
+    box-sizing: border-box;
+}
+#content {
+    width: 700px;
+    height: 200px;
+    box-sizing: border-box;
+}
+div.comment {
+    padding: 2px;
+    border-style: groove;
+}
+p.commentIndent{
+    text-indent: 25px;
+}
