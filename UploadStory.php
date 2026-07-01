@@ -18,6 +18,17 @@ require 'src/NewsHelpers.php';
 session_start();
 date_default_timezone_set('America/Chicago');
 
+if($mysqli === null)
+{
+   ?>
+   <p class="notice">Demo mode is active. Configure MySQL before uploading live stories.</p>
+   <form class="uploadStory" method="POST" action="WustlNews.php">
+      <input type="submit" value="Return to WUSTL News"/>
+   </form>
+   <?php
+   exit;
+}
+
 // Only registered users can upload a story
 if(isset($_SESSION['username']))
 {

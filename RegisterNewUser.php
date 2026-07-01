@@ -30,6 +30,12 @@ date_default_timezone_set('America/Chicago');
 
 if(isset($_POST['username']) and isset($_POST['password']))
 {
+   if($mysqli === null)
+   {
+      echo "<p class=\"error\">Registration requires a configured MySQL database. Demo mode is read-only.</p>";
+      exit;
+   }
+
    // Make sure username input is valid
    if(!\WustlNews\is_valid_account_field($_POST['username']))
    {

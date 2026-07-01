@@ -1,243 +1,212 @@
-<!DOCTYPE html>
-<html lang="en-US">
-<head>
-   <meta charset="UTF-8">
-   <link rel="stylesheet" type="text/css" href="WustlNewsFormat.css">
-   <title>WUSTL News</title>
-</head>
-<body>
-
-<h1>WUSTL News</h1>
-<hr>
-<br>
-
 <?php
-
-// Connect to the Database
 require 'database.php';
 require 'src/NewsHelpers.php';
 
 session_start();
 date_default_timezone_set('America/Chicago');
 
-$registeredUser = false;
-if(isset($_SESSION['username']))
+$registeredUser = isset($_SESSION['username']);
+$currentUser = $_SESSION['username'] ?? null;
+$story_id = (int) ($_GET['story'] ?? 101);
+$usingDemoData = $mysqli === null;
+$story = null;
+$comments = [];
+
+if(!$usingDemoData)
 {
-   $registeredUser = true;
-   $currentUser = $_SESSION['username'];
-}
-
-?>
-<form method="POST" action="WustlNews.php">
-   <input type="submit" value="Back to Main Page"/>
-</form>
-<?php
-
-// Display the Story
-$story_id = $_GET['story'];
-$story_stmt = $mysqli->prepare("SELECT title, category, uploaded_by_user, date_uploaded, content, url FROM stories WHERE story_id=?");
-if(!$story_stmt)
-{
-   printf("Query Prep Failed: %s\n", $mysqli->error);
-   exit;
-}
-$story_stmt->bind_param('d', $story_id);
-
-$story_stmt->execute();
-$story_result = $story_stmt->get_result();
-$story_stmt->close();
-
-while($row = $story_result->fetch_assoc())
-{
-   printf("<h3 class=\"story\" id=\"%s\">%s</h3>", \WustlNews\escape_html($row['category']), \WustlNews\escape_html($row['title']));
-   printf("<p class=\"infoLine\">%s -- Uploaded by %s %s</p>", \WustlNews\escape_html($row['category']), \WustlNews\escape_html($row['uploaded_by_user']), \WustlNews\escape_html($row['date_uploaded']));
-   printf("<p>%s</p>", \WustlNews\escape_html($row['content']));
-   if($row['url'] != NULL)
+   if(isset($_POST['comment']) && $registeredUser)
    {
-      $escaped_url = \WustlNews\escape_html($row['url']);
-      printf("<p>URL: <a href=\"%s\">%s</a></p>", $escaped_url, $escaped_url);
-   }
-   
-   // If the logged in user is the owner of the story, show Edit and Delete buttons
-   if($registeredUser and $currentUser == $row['uploaded_by_user'])
-   {
-      ?>
-      <table>
-      <tr>
-         <td>
-         <form action="EditStory.php" method="POST">
-      <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id) ?>"/>
-            <input type="hidden" name="token" value="<?php echo $_SESSION['token'];?>"/>
-            <input type="submit" value="Edit Story"/>
-         </form>
-         </td>
-         <td>
-         <form method="POST">
-            <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token']);?>"/>
-            <input type="submit" name="deleteStory" value="Delete Story"/>
-         </form>
-         </td>
-      </tr>
-      </table>
-      <?php
-   }
-   
-   // Page break
-   printf("<br><hr>");
-   
-   // Get number of comments
-   $count_stmt = $mysqli->prepare("SELECT COUNT(comment_id) as count FROM comments WHERE story = ?");
-   if(!$count_stmt)
-   {
-      printf("Query Prep Failed: %s\n", $mysqli->error);
-      exit;
-   }
-   $count_stmt->bind_param('d', $story_id);
-
-   $count_stmt->execute();
-   $count_stmt->bind_result($comment_count);
-   while($count_stmt->fetch())
-   {
-      printf("<p>%d Comment(s)</p>", $comment_count);
-   }
-   $count_stmt->close();
-   
-   // Get all the comments and display
-   $comment_stmt = $mysqli->prepare("SELECT comment_id, user, time, comment_text FROM comments WHERE story = ?");
-   if(!$comment_stmt)
-   {
-      printf("Query Prep Failed: %s\n", $mysqli->error);
-      exit;
-   }
-   $comment_stmt->bind_param('d', $story_id);
-
-   $comment_stmt->execute();
-   $comment_result = $comment_stmt->get_result();
-   $comment_stmt->close();
-
-   while($comment_row = $comment_result->fetch_assoc())
-   {
-      ?>
-      <div class="comment">
-      <b><?php echo htmlspecialchars($comment_row['user']) ?></b>
-      <p class="infoLineinComment"><?php echo htmlspecialchars($comment_row['time']) ?></p>
-      <p class="commentIndent"> <?php echo htmlspecialchars($comment_row['comment_text']) ?></p>
-      <?php if($registeredUser and $currentUser == $comment_row['user'])
+      \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
+      if(!\WustlNews\is_valid_story_text($_POST['comment'], 2000))
       {
-         ?>
-         <table>
-         <tr>
-            <td>
-            <form action="EditComment.php" method="POST">
-               <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id) ?>">
-               <input type="hidden" name="comment" value="<?php echo \WustlNews\escape_html($comment_row['comment_id']) ?>">
-               <input type="hidden" name="token" value="<?php echo $_SESSION['token'];?>"/>
-               <input type="submit" value="Edit">
-            </form>
-            </td>
-            <td>
-            <form method="POST">
-               <input type="hidden" name="commentToDelete" value="<?php echo \WustlNews\escape_html($comment_row['comment_id']) ?>">
-               <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token']);?>"/>
-               <input type="submit" value="Delete">
-            </form>
-            </td>
-         </tr>
-         </table>
-         <?php
+         $form_error = 'Invalid characters in comment.';
       }
-      printf("</div>");
+      else
+      {
+         $commentDate = date_format(new DateTime(), 'Y-m-d H:i:sP');
+         $comment_stmt = $mysqli->prepare("INSERT INTO comments (user, time, story, comment_text) VALUES (?,?,?,?)");
+         if($comment_stmt)
+         {
+            $comment_stmt->bind_param('ssds', $currentUser, $commentDate, $story_id, $_POST['comment']);
+            $comment_stmt->execute();
+            $comment_stmt->close();
+            header("Location: Story.php?story=" . $story_id);
+            exit;
+         }
+      }
+   }
+
+   if(isset($_POST['deleteStory']) && $registeredUser)
+   {
+      \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
+      $delete_comments = $mysqli->prepare("DELETE FROM comments WHERE story=?");
+      $delete_story = $mysqli->prepare("DELETE FROM stories WHERE story_id=? AND uploaded_by_user=?");
+      if($delete_comments && $delete_story)
+      {
+         $delete_comments->bind_param('d', $story_id);
+         $delete_comments->execute();
+         $delete_comments->close();
+
+         $delete_story->bind_param('ds', $story_id, $currentUser);
+         $delete_story->execute();
+         $delete_story->close();
+         header("Location: WustlNews.php");
+         exit;
+      }
+   }
+
+   if(isset($_POST['commentToDelete']) && $registeredUser)
+   {
+      \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
+      $commentId = (int) $_POST['commentToDelete'];
+      $delete_comment = $mysqli->prepare("DELETE FROM comments WHERE comment_id=? AND user=?");
+      if($delete_comment)
+      {
+         $delete_comment->bind_param('ds', $commentId, $currentUser);
+         $delete_comment->execute();
+         $delete_comment->close();
+         header("Location: Story.php?story=" . $story_id);
+         exit;
+      }
+   }
+
+   $story_stmt = $mysqli->prepare("SELECT story_id, title, category, uploaded_by_user, date_uploaded, content, url FROM stories WHERE story_id=?");
+   if($story_stmt)
+   {
+      $story_stmt->bind_param('d', $story_id);
+      $story_stmt->execute();
+      $story_result = $story_stmt->get_result();
+      $story = $story_result->fetch_assoc() ?: null;
+      $story_stmt->close();
+   }
+
+   $comment_stmt = $mysqli->prepare("SELECT comment_id, user, time, comment_text FROM comments WHERE story = ? ORDER BY time DESC");
+   if($comment_stmt)
+   {
+      $comment_stmt->bind_param('d', $story_id);
+      $comment_stmt->execute();
+      $comment_result = $comment_stmt->get_result();
+      while($comment_row = $comment_result->fetch_assoc())
+      {
+         $comments[] = $comment_row;
+      }
+      $comment_stmt->close();
+   }
+
+   if($story === null)
+   {
+      $usingDemoData = true;
    }
 }
 
-
-// Registered Users can Add Comments - Display text box and button
-if($registeredUser)
+if($usingDemoData)
 {
-   ?>
-   <br>
-   <form method="POST">
-      <textarea rows="5" cols="50" name="comment" required></textarea>
-      <input type="hidden" name="token" value="<?php echo $_SESSION['token'];?>"/>
-      <input type="submit" value="Add Comment"/>
-   </form>
-   <?php
+   $story = \WustlNews\find_story(\WustlNews\demo_stories(), $story_id) ?? \WustlNews\demo_stories()[0];
+   $comments = \WustlNews\demo_comments((int) $story['story_id']);
 }
-
-if(isset($_POST['comment']))
-{
-   // Check token
-   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
-   
-   if(!\WustlNews\is_valid_story_text($_POST['comment'], 2000))
-   {
-      echo "<p class=\"error\">Invalid characters in comment</p>";
-      exit;
-   }
-   
-   $dateTime = new DateTime();
-   $commentDate = date_format($dateTime, 'Y-m-d H:i:sP');
-   
-   $comment_stmt = $mysqli->prepare("INSERT INTO comments (user, time, story, comment_text) VALUES (?,?,?,?)");
-   if(!$comment_stmt)
-   {
-      printf("Query Prep Failed: %s\n", $mysqli->error);
-      exit;
-   }
-   $comment_stmt->bind_param('ssds', $currentUser, $commentDate, $story_id, $_POST['comment']);
-   $comment_stmt->execute();
-   $comment_stmt->close();
-   
-   header("Refresh:0");
-}
-
-// User wants to delete their story
-if(isset($_POST['deleteStory']))
-{
-   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
-
-   $safe_story_id = $mysqli->real_escape_string($story_id);
-
-   // First delete all the comments for the story
-   $delete_comments = sprintf("DELETE FROM comments WHERE story=%s", $safe_story_id);
-   $delete_success = $mysqli->query($delete_comments);
-   if(!$delete_success)
-   {
-      printf("DELETE Comments Failed: %s\n", $mysqli->error);
-      exit;
-   }
-
-   // Next delete the story
-   $delete_story = sprintf("DELETE FROM stories WHERE story_id=%s", $safe_story_id);
-   $delete_success = $mysqli->query($delete_story);
-   if(!$delete_success)
-   {
-      printf("DELETE Story Failed: %s\n", $mysqli->error);
-      exit;
-   }
-
-   header("Location:WustlNews.php");
-}
-
-// User wants to delete their comment
-if(isset($_POST['commentToDelete']))
-{
-   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
-
-   $safe_comment_id = $mysqli->real_escape_string($_POST['commentToDelete']);
-
-   $delete_comment = sprintf("DELETE FROM comments WHERE comment_id=%s", $safe_comment_id);
-   $delete_success = $mysqli->query($delete_comment);
-   if(!$delete_success)
-   {
-      printf("DELETE Comment Failed: %s\n", $mysqli->error);
-      exit;
-   }
-
-   header("Refresh:0");
-}
-
 ?>
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="stylesheet" type="text/css" href="WustlNewsFormat.css">
+   <title><?php echo \WustlNews\escape_html((string) $story['title']); ?> - WUSTL News</title>
+</head>
+<body>
+<header class="app-header">
+   <a class="brand" href="WustlNews.php">
+      <span class="brand-mark">W</span>
+      <span>
+         <strong>WUSTL News</strong>
+         <small>Story desk</small>
+      </span>
+   </a>
+   <nav class="header-actions" aria-label="Story actions">
+      <a class="button button-secondary" href="WustlNews.php">Back to Feed</a>
+      <?php if($registeredUser && $currentUser === $story['uploaded_by_user'] && !$usingDemoData): ?>
+         <form action="EditStory.php" method="POST">
+            <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html((string) $story_id); ?>">
+            <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token'] ?? ''); ?>">
+            <button type="submit" class="button">Edit</button>
+         </form>
+         <form method="POST">
+            <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token'] ?? ''); ?>">
+            <button type="submit" name="deleteStory" class="button button-danger">Delete</button>
+         </form>
+      <?php endif; ?>
+   </nav>
+</header>
 
+<main class="article-shell">
+   <article class="article-card">
+      <?php if($usingDemoData): ?>
+         <p class="notice">Demo mode is active. Comments and edit actions are sample-only until MySQL is configured.</p>
+      <?php endif; ?>
+      <?php if(isset($form_error)): ?>
+         <p class="error"><?php echo \WustlNews\escape_html($form_error); ?></p>
+      <?php endif; ?>
+
+      <div class="story-meta">
+         <span class="category-chip <?php echo \WustlNews\category_css_class((string) $story['category']); ?>">
+            <?php echo \WustlNews\escape_html(\WustlNews\category_display_label((string) $story['category'])); ?>
+         </span>
+         <span><?php echo \WustlNews\reading_minutes((string) $story['content']); ?> min read</span>
+      </div>
+      <h1><?php echo \WustlNews\escape_html((string) $story['title']); ?></h1>
+      <p class="article-byline">By <?php echo \WustlNews\escape_html((string) $story['uploaded_by_user']); ?> · <?php echo \WustlNews\escape_html((string) $story['date_uploaded']); ?></p>
+      <div class="article-body">
+         <?php echo nl2br(\WustlNews\escape_html((string) $story['content'])); ?>
+      </div>
+      <?php if($story['url'] !== null && trim((string) $story['url']) !== ''): ?>
+         <p><a class="text-link" href="<?php echo \WustlNews\escape_html((string) $story['url']); ?>">Read the source</a></p>
+      <?php endif; ?>
+   </article>
+
+   <section class="comments-panel" aria-label="Comments">
+      <div class="section-heading">
+         <h2><?php echo count($comments); ?> Comment<?php echo count($comments) === 1 ? '' : 's'; ?></h2>
+      </div>
+
+      <?php foreach($comments as $comment_row): ?>
+         <article class="comment">
+            <div class="comment-header">
+               <strong><?php echo \WustlNews\escape_html((string) $comment_row['user']); ?></strong>
+               <span><?php echo \WustlNews\escape_html((string) $comment_row['time']); ?></span>
+            </div>
+            <p><?php echo \WustlNews\escape_html((string) $comment_row['comment_text']); ?></p>
+            <?php if($registeredUser && $currentUser === $comment_row['user'] && !$usingDemoData): ?>
+               <div class="inline-actions">
+                  <form action="EditComment.php" method="POST">
+                     <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html((string) $story_id); ?>">
+                     <input type="hidden" name="comment" value="<?php echo \WustlNews\escape_html((string) $comment_row['comment_id']); ?>">
+                     <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token'] ?? ''); ?>">
+                     <button type="submit" class="button button-secondary">Edit</button>
+                  </form>
+                  <form method="POST">
+                     <input type="hidden" name="commentToDelete" value="<?php echo \WustlNews\escape_html((string) $comment_row['comment_id']); ?>">
+                     <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token'] ?? ''); ?>">
+                     <button type="submit" class="button button-danger">Delete</button>
+                  </form>
+               </div>
+            <?php endif; ?>
+         </article>
+      <?php endforeach; ?>
+
+      <?php if($registeredUser && !$usingDemoData): ?>
+         <form class="comment-form" method="POST">
+            <label for="comment">Add a comment</label>
+            <textarea id="comment" rows="5" name="comment" required></textarea>
+            <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token'] ?? ''); ?>">
+            <button type="submit" class="button">Post Comment</button>
+         </form>
+      <?php else: ?>
+         <div class="empty-state compact">
+            <h2><?php echo $usingDemoData ? 'Demo comments are read-only' : 'Log in to join the discussion'; ?></h2>
+            <p><?php echo $usingDemoData ? 'Connect MySQL to enable posting, editing, and deleting.' : 'Authenticated users can add comments to live stories.'; ?></p>
+         </div>
+      <?php endif; ?>
+   </section>
+</main>
 </body>
 </html>

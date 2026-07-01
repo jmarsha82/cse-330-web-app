@@ -41,6 +41,12 @@ if(isset($_POST['logout']))
 // Username and password were submitted
 if(isset($_POST['username']) && isset($_POST['password']))
 {
+   if($mysqli === null)
+   {
+      echo "<p class=\"error\">Login requires a configured MySQL database. Demo mode is read-only.</p>";
+      exit;
+   }
+
    // Make sure username input is valid
    if(!\WustlNews\is_valid_account_field($_POST['username']))
    {
