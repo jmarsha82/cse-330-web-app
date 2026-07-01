@@ -13,6 +13,8 @@
 
 <?php
 require 'database.php';
+require 'src/NewsHelpers.php';
+
 session_start();
 date_default_timezone_set('America/Chicago');
 
@@ -48,10 +50,7 @@ $comment_stmt->close();
 if($registeredUser and $currentUser == $comment_owner)
 {
    // Check token
-   if(!hash_equals($_SESSION['token'], $_POST['token']))
-   {
-      die("<p class=\"error\">Request forgery detected!</p>");
-   }
+   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
    
    // Get current comment info
    $comment_stmt = $mysqli->prepare("SELECT comment_text FROM comments WHERE comment_id=?");
@@ -70,15 +69,18 @@ if($registeredUser and $currentUser == $comment_owner)
    {
       ?>
       <form class="uploadStory" name="editComment" method="POST">
+          <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id); ?>">
+          <input type="hidden" name="comment" value="<?php echo \WustlNews\escape_html($comment_id); ?>">
+          <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token']); ?>">
           <div>
             <label>Comment Content</label><br>
-            <textarea id="content" name="content" required><?php echo htmlspecialchars($row['comment_text']) ?></textarea>
+            <textarea id="content" name="content" required><?php echo \WustlNews\escape_html($row['comment_text']) ?></textarea>
           </div><br>
          <input type="submit" value="Update">
       </form>
 
       <form class="uploadStory" method="GET" action="Story.php">
-         <input type="hidden" name="story" value="<?php echo $story_id ?>">
+         <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id) ?>">
          <input type="submit" value="Cancel"/>
       </form>
        
@@ -86,13 +88,13 @@ if($registeredUser and $currentUser == $comment_owner)
       if(isset($_POST['content']))
       {
          // Make sure comment input is valid
-         if( !preg_match('/^[\w_\-]+$/', $_POST['comment']) )
+         if(!\WustlNews\is_valid_story_text($_POST['content'], 2000))
          {
             echo "<p class=\"error\">Invalid characters in comment</p>";
             exit;
          }
        
-         $content = $_POST['content'];
+         $content = trim($_POST['content']);
          //$dateTime = new DateTime();
          //$dateUploaded = date_format($dateTime, 'Y-m-d H:i:sP');
          

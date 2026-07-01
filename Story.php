@@ -15,6 +15,7 @@
 
 // Connect to the Database
 require 'database.php';
+require 'src/NewsHelpers.php';
 
 session_start();
 date_default_timezone_set('America/Chicago');
@@ -48,13 +49,13 @@ $story_stmt->close();
 
 while($row = $story_result->fetch_assoc())
 {
-   printf("<h3 class=\"story\" id=\"%s\">%s</h3>", $row['category'], $row['title']);
-   printf("<p class=\"infoLine\">%s -- Uploaded by %s %s</p>", $row['category'], $row['uploaded_by_user'], $row['date_uploaded']);
-   printf("<p>%s</p>", $row['content']);
+   printf("<h3 class=\"story\" id=\"%s\">%s</h3>", \WustlNews\escape_html($row['category']), \WustlNews\escape_html($row['title']));
+   printf("<p class=\"infoLine\">%s -- Uploaded by %s %s</p>", \WustlNews\escape_html($row['category']), \WustlNews\escape_html($row['uploaded_by_user']), \WustlNews\escape_html($row['date_uploaded']));
+   printf("<p>%s</p>", \WustlNews\escape_html($row['content']));
    if($row['url'] != NULL)
    {
-      $escaped_url = htmlentities($row['url']);
-      printf("<p>URL: <a href=\"%s\">%s</a></p>", $row['url'], $escaped_url);
+      $escaped_url = \WustlNews\escape_html($row['url']);
+      printf("<p>URL: <a href=\"%s\">%s</a></p>", $escaped_url, $escaped_url);
    }
    
    // If the logged in user is the owner of the story, show Edit and Delete buttons
@@ -65,13 +66,14 @@ while($row = $story_result->fetch_assoc())
       <tr>
          <td>
          <form action="EditStory.php" method="POST">
-            <input type="hidden" name="story" value="<?php echo $story_id ?>"/>
+      <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id) ?>"/>
             <input type="hidden" name="token" value="<?php echo $_SESSION['token'];?>"/>
             <input type="submit" value="Edit Story"/>
          </form>
          </td>
          <td>
          <form method="POST">
+            <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token']);?>"/>
             <input type="submit" name="deleteStory" value="Delete Story"/>
          </form>
          </td>
@@ -127,15 +129,16 @@ while($row = $story_result->fetch_assoc())
          <tr>
             <td>
             <form action="EditComment.php" method="POST">
-               <input type="hidden" name="story" value="<?php echo $story_id ?>">
-               <input type="hidden" name="comment" value="<?php echo $comment_row['comment_id'] ?>">
+               <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id) ?>">
+               <input type="hidden" name="comment" value="<?php echo \WustlNews\escape_html($comment_row['comment_id']) ?>">
                <input type="hidden" name="token" value="<?php echo $_SESSION['token'];?>"/>
                <input type="submit" value="Edit">
             </form>
             </td>
             <td>
             <form method="POST">
-               <input type="hidden" name="commentToDelete" value="<?php echo $comment_row['comment_id'] ?>">
+               <input type="hidden" name="commentToDelete" value="<?php echo \WustlNews\escape_html($comment_row['comment_id']) ?>">
+               <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token']);?>"/>
                <input type="submit" value="Delete">
             </form>
             </td>
@@ -164,12 +167,9 @@ if($registeredUser)
 if(isset($_POST['comment']))
 {
    // Check token
-   if(!hash_equals($_SESSION['token'], $_POST['token']))
-   {
-      die("<p class=\"error\">Request forgery detected!</p>");
-   }
+   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
    
-   if( !preg_match('/^[\w_\-]+$/', $_POST['comment']) )
+   if(!\WustlNews\is_valid_story_text($_POST['comment'], 2000))
    {
       echo "<p class=\"error\">Invalid characters in comment</p>";
       exit;
@@ -194,6 +194,8 @@ if(isset($_POST['comment']))
 // User wants to delete their story
 if(isset($_POST['deleteStory']))
 {
+   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
+
    $safe_story_id = $mysqli->real_escape_string($story_id);
 
    // First delete all the comments for the story
@@ -220,6 +222,8 @@ if(isset($_POST['deleteStory']))
 // User wants to delete their comment
 if(isset($_POST['commentToDelete']))
 {
+   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
+
    $safe_comment_id = $mysqli->real_escape_string($_POST['commentToDelete']);
 
    $delete_comment = sprintf("DELETE FROM comments WHERE comment_id=%s", $safe_comment_id);

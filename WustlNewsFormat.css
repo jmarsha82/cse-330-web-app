@@ -1,203 +1,208 @@
-h1 {
-    color:black;
-    font-family:Bernard MT Condensed;
-    font-size:300%;
-	text-align: center;
-	letter-spacing: 10px;
+* {
+    box-sizing: border-box;
 }
-hr { 
-    display: block;
-    margin-top: auto;
-    margin-bottom: auto;
+
+body {
+    margin: 0;
+    padding: 32px;
+    background: #f4f6f8;
+    color: #1f2933;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.5;
+}
+
+body > * {
+    max-width: 980px;
     margin-left: auto;
     margin-right: auto;
-    border-width: thick;
-} 
-h2 {
-    color:black;
-    font-size:200%;
-	text-align: left;
 }
+
+h1 {
+    margin-top: 0;
+    color: #13294b;
+    font-size: 42px;
+    text-align: center;
+    letter-spacing: 0;
+}
+
+h2 {
+    color: #13294b;
+    font-size: 28px;
+}
+
 h3.story {
     border: none;
+    border-radius: 6px;
     color: white;
-    padding-left: 0.25cm;
-    font-size: 18px;
+    padding: 12px 16px;
+    font-size: 20px;
     font-weight: bold;
-    text-align: left;
     width: 100%;
-    letter-spacing: 1px;
-    text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000; 
 }
+
+hr {
+    border: 0;
+    border-top: 3px solid #d7dde5;
+}
+
 label {
-    color:black;
-    font-size:125%;
-	text-align: left;
+    color: #13294b;
+    font-size: 16px;
+    font-weight: bold;
 }
-table, td {
+
+table,
+td {
     border: none;
-    padding: 1px;
+    padding: 4px;
 }
+
 th {
     text-align: left;
-    padding: 2px;
+    padding: 6px;
 }
+
+form {
+    margin-bottom: 12px;
+}
+
+input,
+select,
+textarea {
+    border: 1px solid #b8c2cc;
+    border-radius: 6px;
+    font: inherit;
+    padding: 8px 10px;
+}
+
+input[type="submit"] {
+    background: #13294b;
+    border: 0;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+input[type="submit"]:hover {
+    background: #315a8c;
+}
+
+input[type="radio"] {
+    margin-left: 12px;
+}
+
 p.error {
-    color: red;
+    color: #b42318;
+    font-weight: bold;
 }
+
 p.notice {
-    color: blue;
-}
-p.infoLine{
-    background-color: lightgrey;
-    font-style: italic;
-    width: 500px;
-}
-p.infoLineinComment{
-    font-style: italic;
-    width: 500px;
-    padding: 0px;
-    margin: 0px;
+    color: #175cd3;
+    font-weight: bold;
 }
 
-input.storytitlePolitics{
-    background-color: red;
-    cursor: pointer;
+p.infoLine {
+    background-color: #e7edf3;
+    border-radius: 6px;
+    font-style: italic;
+    padding: 8px 10px;
+}
+
+p.infoLineinComment {
+    color: #52616f;
+    font-style: italic;
+    margin: 0;
+}
+
+input[class^="storytitle"] {
     border: none;
+    border-radius: 6px;
     color: white;
+    cursor: pointer;
+    display: block;
     font-size: 18px;
     font-weight: bold;
+    margin-top: 20px;
+    padding: 12px 16px;
     text-align: left;
     width: 100%;
-    letter-spacing: 1px;
-    text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000; 
 }
-input.storytitlePolitics:hover {
+
+input[class^="storytitle"]:hover {
     text-decoration: underline;
 }
+
+input.storytitlePolitics,
 #Politics {
-    background-color: red;
+    background-color: #b42318;
 }
 
-input.storytitleSports{
-    background-color: green;
-    cursor: pointer;
-    border: none;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: left;
-    width: 100%;
-    letter-spacing: 1px;
-    text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000; 
-}
-input.storytitleSports:hover {
-    text-decoration: underline;
-}
+input.storytitleSports,
 #Sports {
-    background-color: green;
+    background-color: #027a48;
 }
 
-input.storytitleEntertainment{
-    background-color: yellow;
-    cursor: pointer;
-    border: none;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: left;
-    width: 100%;
-    letter-spacing: 1px;
-    text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000; 
-}
-input.storytitleEntertainment:hover {
-    text-decoration: underline;
-}
+input.storytitleEntertainment,
 #Entertainment {
-    background-color: yellow;
+    background-color: #a15c07;
 }
 
-input.storytitleWorld{
-    background-color: orange;
-    cursor: pointer;
-    border: none;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: left;
-    width: 100%;
-    letter-spacing: 1px;
-    text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000; 
-}
-input.storytitleWorld:hover {
-    text-decoration: underline;
-}
+input.storytitleWorld,
 #World {
-    background-color: orange;
+    background-color: #6941c6;
 }
 
-input.storytitleTechnology{
-    background-color: gray;
-    cursor: pointer;
-    border: none;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: left;
-    width: 100%;
-    letter-spacing: 1px;
-    text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000; 
-}
-input.storytitleTechnology:hover {
-    text-decoration: underline;
-}
+input.storytitleTechnology,
 #Technology {
-    background-color: gray;
+    background-color: #0e7090;
 }
 
 form.uploadStory {
-    vertical-align: text-top;
-    font-size:115%;
-    width: auto;
-    padding: 5px;
+    background: #ffffff;
+    border: 1px solid #d7dde5;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding: 18px;
 }
-input.uploadStoryinput {
-    width: 500px;
-    box-sizing: border-box;
-}
+
+input.uploadStoryinput,
 #content {
-    width: 700px;
-    height: 200px;
-    box-sizing: border-box;
+    width: min(100%, 700px);
 }
+
+#content {
+    min-height: 200px;
+}
+
 div.comment {
-    padding: 2px;
-    border-style: groove;
+    background: #ffffff;
+    border: 1px solid #d7dde5;
+    border-radius: 8px;
+    margin: 12px auto;
+    padding: 14px;
 }
-p.commentIndent{
-    text-indent: 25px;
+
+p.commentIndent {
+    margin-left: 24px;
+}
+
+@media (max-width: 700px) {
+    body {
+        padding: 18px;
+    }
+
+    h1 {
+        font-size: 32px;
+    }
+
+    table,
+    tbody,
+    tr,
+    td {
+        display: block;
+    }
+
+    input[type="submit"] {
+        width: 100%;
+    }
 }

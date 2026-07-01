@@ -19,13 +19,14 @@
 
 // Connect to the Database
 require 'database.php';
+require 'src/NewsHelpers.php';
 
 session_start();
 
 if(isset($_GET['user']))
 {
    $chosenUser = $_GET['user'];
-   printf("<h2>%s</h2>", $chosenUser);
+   printf("<h2>%s</h2>", \WustlNews\escape_html($chosenUser));
 
    // SQL Query to find when the user joined
    $stmt = $mysqli->prepare("SELECT date_joined FROM users WHERE username=?");
@@ -41,7 +42,7 @@ if(isset($_GET['user']))
    $stmt->bind_result($joinDate);
    if($stmt->fetch())
    {
-      printf("<p><i>User since %s</i></p>", $joinDate);
+      printf("<p><i>User since %s</i></p>", \WustlNews\escape_html($joinDate));
    }
    $stmt->close();
    
@@ -96,11 +97,12 @@ if(isset($_GET['user']))
          <input class="storytitle<?php echo htmlspecialchars($row['category']) ?>" type="submit" value="<?php  echo htmlspecialchars($row['title']) ?>"/>
       </form>
       <?php
-      printf("<p class=\"infoLine\">%s -- Uploaded by %s %s</p>", $row['category'], $chosenUser, $row['date_uploaded']);
-      printf("%s", $row['content']);
+      printf("<p class=\"infoLine\">%s -- Uploaded by %s %s</p>", \WustlNews\escape_html($row['category']), \WustlNews\escape_html($chosenUser), \WustlNews\escape_html($row['date_uploaded']));
+      printf("%s", \WustlNews\escape_html($row['content']));
       if($row['url'] != NULL)
       {
-         printf("<br><br>URL: <a href=\"%s\">%s</a>", $row['url'], $row['url']);
+         $escaped_url = \WustlNews\escape_html($row['url']);
+         printf("<br><br>URL: <a href=\"%s\">%s</a>", $escaped_url, $escaped_url);
       }
       
       // Find out how many comments there are for each story

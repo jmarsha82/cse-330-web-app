@@ -18,6 +18,7 @@
 <?php
 // Connect to the Database
 require 'database.php';
+require 'src/NewsHelpers.php';
 
 session_start();
 
@@ -41,12 +42,12 @@ if(isset($_POST['logout']))
 if(isset($_POST['username']) && isset($_POST['password']))
 {
    // Make sure username input is valid
-   if( !preg_match('/^[\w_\-]+$/', $_POST['username']) )
+   if(!\WustlNews\is_valid_account_field($_POST['username']))
    {
       echo "<p class=\"error\">Invalid username</p>";
       exit;
    }
-	if( !preg_match('/^[\w_\-]+$/', $_POST['password']) )
+	if(!\WustlNews\is_valid_account_field($_POST['password']))
    {
       echo "<p class=\"error\">Invalid password</p>";
       exit;

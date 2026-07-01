@@ -13,6 +13,8 @@
 
 <?php
 require 'database.php';
+require 'src/NewsHelpers.php';
+
 session_start();
 date_default_timezone_set('America/Chicago');
 
@@ -20,13 +22,11 @@ date_default_timezone_set('America/Chicago');
 if(isset($_SESSION['username']))
 {
    // Check token
-   if(!hash_equals($_SESSION['token'], $_POST['token']))
-   {
-      die("<p class=\"error\">Request forgery detected!</p>");
-   }
+   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
     
    ?>
    <form class="uploadStory" name="story_upload" method="POST">
+       <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token']); ?>">
        <div>
            <label>Title</label><br>
            <input class="uploadStoryinput" type="text" name="title" required>
@@ -34,11 +34,11 @@ if(isset($_SESSION['username']))
        <div>
            <label>Category</label><br>
            <select name="category">
-               <option value="politics">Politics</option>
-               <option value="sports">Sports</option>
-               <option value="entertainment">Entertainment</option>
-               <option value="world">World</option>
-               <option value="technology">Technology</option>
+               <option value="Politics">Politics</option>
+               <option value="Sports">Sports</option>
+               <option value="Entertainment">Entertainment</option>
+               <option value="World">World</option>
+               <option value="Technology">Technology</option>
            </select>
        </div><br>
        <div>
@@ -60,25 +60,31 @@ if(isset($_SESSION['username']))
    if(isset($_POST['title']) and isset($_POST['category']) and isset($_POST['content']))
    {
       // Make sure story input is valid
-      if( !preg_match('/^[\w_\-]+$/', $_POST['title']) )
+      if(!\WustlNews\is_valid_story_text($_POST['title'], 150))
       {
          echo "<p class=\"error\">Invalid title</p>";
          exit;
       }
-      if( !preg_match('/^[\w_\-]+$/', $_POST['content']) )
+      if(!\WustlNews\is_valid_story_text($_POST['content']))
       {
          echo "<p class=\"error\">Invalid characters in story content</p>";
          exit;
       }
       
+      if(!\WustlNews\is_valid_optional_url($_POST['url'] ?? null))
+      {
+         echo "<p class=\"error\">Invalid URL</p>";
+         exit;
+      }
+
       // Set the variables
-      $title = $_POST['title'];
+      $title = trim($_POST['title']);
       $user = $_SESSION['username'];
-      $category = $_POST['category'];
-      $content = $_POST['content'];
+      $category = \WustlNews\normalize_category($_POST['category']);
+      $content = trim($_POST['content']);
       $dateTime = new DateTime(); // current time
       $dateUploaded = date_format($dateTime, 'Y-m-d H:i:sP');
-      $url = $_POST['url'];  
+      $url = trim($_POST['url'] ?? '');
       
       // Prepare and execute the insert to the database
       $stmt = $mysqli->prepare("INSERT INTO stories (title, uploaded_by_user, category, content, date_uploaded, url) VALUES (?,?,?,?,?,?)");

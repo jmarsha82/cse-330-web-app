@@ -15,6 +15,7 @@
 
 // Connect to the Database
 require 'database.php';
+require 'src/NewsHelpers.php';
 
 session_start();
 
@@ -23,7 +24,7 @@ if(isset($_SESSION['username']))
 {
    // Display Welcome Message
    $currentUser = $_SESSION['username'];
-   printf("Welcome %s!", $currentUser);
+   printf("Welcome %s!", \WustlNews\escape_html($currentUser));
    
    // Display View Profile, Upload Story, and Log Out Buttons
    ?>
@@ -32,7 +33,7 @@ if(isset($_SESSION['username']))
    <tr>
       <td>
       <form method="GET" action="ViewProfile.php">
-         <input type="hidden" name="user" value="<?php echo $currentUser ?>">
+         <input type="hidden" name="user" value="<?php echo \WustlNews\escape_html($currentUser) ?>">
          <input type="submit" value="View Profile"/>
       </form>
       </td>
@@ -63,14 +64,7 @@ else // Un-registered users get Login Button
 }
 
 // Allow filtering by category
-if(isset($_GET['category']))
-{
-   $filter_category = $_GET['category'];
-}
-else
-{
-   $filter_category = 'All';
-}
+$filter_category = \WustlNews\normalize_category($_GET['category'] ?? null);
 ?>
 
 <table>
@@ -129,15 +123,15 @@ while($row = $story_result->fetch_assoc())
    ?>
    <form action="Story.php" method="GET">
       <input type="hidden" name="story" value="<?php echo $row['story_id'] ?>"/>
-      <input class="storytitle<?php echo htmlspecialchars($row['category']) ?>" type="submit" value="<?php  echo htmlspecialchars($row['title']) ?>"/>
+      <input class="storytitle<?php echo \WustlNews\escape_html($row['category']) ?>" type="submit" value="<?php  echo \WustlNews\escape_html($row['title']) ?>"/>
    </form>
    <?php
-   printf("<p class=\"infoLine\">%s -- Uploaded by %s %s</p>", $row['category'], htmlspecialchars($row['uploaded_by_user']), $row['date_uploaded']);
-   printf("%s", htmlspecialchars($row['content']));
+   printf("<p class=\"infoLine\">%s -- Uploaded by %s %s</p>", \WustlNews\escape_html($row['category']), \WustlNews\escape_html($row['uploaded_by_user']), \WustlNews\escape_html($row['date_uploaded']));
+   printf("%s", \WustlNews\escape_html($row['content']));
    if($row['url'] != NULL)
    {
-      $escaped_url = htmlentities($row['url']);
-      printf("<br><br>URL: <a href=\"%s\">%s</a>", $row['url'], $escaped_url);
+      $escaped_url = \WustlNews\escape_html($row['url']);
+      printf("<br><br>URL: <a href=\"%s\">%s</a>", $escaped_url, $escaped_url);
    }
    
    // Find out how many comments there are for each story
