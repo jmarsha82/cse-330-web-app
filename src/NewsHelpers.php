@@ -92,7 +92,19 @@ function excerpt(?string $value, int $maxLength = 220): string
         return $normalized;
     }
 
-    return rtrim(substr($normalized, 0, $maxLength - 1)) . '...';
+    $ellipsis = '...';
+    $contentLimit = max(0, $maxLength - strlen($ellipsis));
+    if ($contentLimit === 0) {
+        return $ellipsis;
+    }
+
+    $truncated = substr($normalized, 0, $contentLimit);
+    $lastSpace = strrpos($truncated, ' ');
+    if ($lastSpace !== false && $lastSpace > 0) {
+        $truncated = substr($truncated, 0, $lastSpace);
+    }
+
+    return rtrim($truncated) . $ellipsis;
 }
 
 function reading_minutes(?string $value, int $wordsPerMinute = 220): int
