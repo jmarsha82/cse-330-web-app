@@ -13,6 +13,8 @@
 
 <?php
 require 'database.php';
+require 'src/NewsHelpers.php';
+
 session_start();
 date_default_timezone_set('America/Chicago');
 
@@ -43,10 +45,7 @@ $story_stmt->close();
 if($registeredUser and $currentUser == $story_owner)
 {
    // Check token
-   if(!hash_equals($_SESSION['token'], $_POST['token']))
-   {
-      die("<p class=\"error\">Request forgery detected!</p>");
-   }
+   \WustlNews\require_valid_csrf_token($_SESSION['token'] ?? null, $_POST['token'] ?? null);
 
    // Get current story info
    $story_stmt = $mysqli->prepare("SELECT title, category, content, url FROM stories WHERE story_id=?");
@@ -65,33 +64,35 @@ if($registeredUser and $currentUser == $story_owner)
    {
       ?>
       <form class="uploadStory" name="editStory" method="POST">
+         <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id); ?>">
+         <input type="hidden" name="token" value="<?php echo \WustlNews\escape_html($_SESSION['token']); ?>">
          <div>
             <label>Title</label><br>
-            <input class="uploadStoryinput" type="text" name="title" value="<?php echo htmlspecialchars($row['title']) ?>" required>
+            <input class="uploadStoryinput" type="text" name="title" value="<?php echo \WustlNews\escape_html($row['title']) ?>" required>
          </div><br>
          <div>
             <label>Category</label><br>
             <select name="category">
-               <option <?php if($row['category']=="Politics") echo "selected" ?> value="politics">Politics</option>
-               <option <?php if($row['category']=="Sports") echo "selected" ?> value="sports">Sports</option>
-               <option <?php if($row['category']=="Entertainment") echo "selected" ?> value="entertainment">Entertainment</option>
-               <option <?php if($row['category']=="World") echo "selected" ?> value="world">World</option>
-               <option <?php if($row['category']=="Technology") echo "selected" ?> value="technology">Technology</option>
+               <option <?php if($row['category']=="Politics") echo "selected" ?> value="Politics">Politics</option>
+               <option <?php if($row['category']=="Sports") echo "selected" ?> value="Sports">Sports</option>
+               <option <?php if($row['category']=="Entertainment") echo "selected" ?> value="Entertainment">Entertainment</option>
+               <option <?php if($row['category']=="World") echo "selected" ?> value="World">World</option>
+               <option <?php if($row['category']=="Technology") echo "selected" ?> value="Technology">Technology</option>
             </select>
          </div><br>
          <div>
             <label>URL (optional)</label><br>
-            <input class="uploadStoryinput" type="url" name="url" value="<?php echo htmlspecialchars($row['url']) ?>">
+            <input class="uploadStoryinput" type="url" name="url" value="<?php echo \WustlNews\escape_html($row['url']) ?>">
          </div><br>
          <div>
             <label>Content</label><br>
-            <textarea id="content" name="content" required><?php echo htmlspecialchars($row['content']) ?></textarea>
+            <textarea id="content" name="content" required><?php echo \WustlNews\escape_html($row['content']) ?></textarea>
          </div><br>
          <input type="submit" value="Update">
       </form>
       
       <form class="uploadStory" method="GET" action="Story.php">
-         <input type="hidden" name="story" value="<?php echo $story_id ?>">
+         <input type="hidden" name="story" value="<?php echo \WustlNews\escape_html($story_id) ?>">
          <input type="submit" value="Cancel"/>
       </form>
       
@@ -99,25 +100,31 @@ if($registeredUser and $currentUser == $story_owner)
       if(isset($_POST['title']) and isset($_POST['category']) and isset($_POST['content']))
       {
          // Make sure story input is valid
-         if( !preg_match('/^[\w_\-]+$/', $_POST['title']) )
+         if(!\WustlNews\is_valid_story_text($_POST['title'], 150))
          {
             echo "<p class=\"error\">Invalid title</p>";
             exit;
          }
          
-         if( !preg_match('/^[\w_\-]+$/', $_POST['content']) )
+         if(!\WustlNews\is_valid_story_text($_POST['content']))
          {
             echo "<p class=\"error\">Invalid characters in content</p>";
             exit;
          }
 
-         $title = $_POST['title'];
+         if(!\WustlNews\is_valid_optional_url($_POST['url'] ?? null))
+         {
+            echo "<p class=\"error\">Invalid URL</p>";
+            exit;
+         }
+
+         $title = trim($_POST['title']);
          $user = $_SESSION['username'];
-         $category = $_POST['category'];
-         $content = $_POST['content'];
+         $category = \WustlNews\normalize_category($_POST['category']);
+         $content = trim($_POST['content']);
          //$dateTime = new DateTime();
          //$dateUploaded = date_format($dateTime, 'Y-m-d H:i:sP');
-         $url = $_POST['url'];  
+         $url = trim($_POST['url'] ?? '');
          
          $stmt = $mysqli->prepare("UPDATE stories SET title=?, category=?, content=?, url=? WHERE story_id=?");
          if(!$story_stmt)

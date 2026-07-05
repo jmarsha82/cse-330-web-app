@@ -23,19 +23,26 @@
 <?php
 // Connect to the Database
 require 'database.php';
+require 'src/NewsHelpers.php';
 
 session_start();
 date_default_timezone_set('America/Chicago');
 
 if(isset($_POST['username']) and isset($_POST['password']))
 {
+   if($mysqli === null)
+   {
+      echo "<p class=\"error\">Registration requires a configured MySQL database. Demo mode is read-only.</p>";
+      exit;
+   }
+
    // Make sure username input is valid
-   if( !preg_match('/^[\w_\-]+$/', $_POST['username']) )
+   if(!\WustlNews\is_valid_account_field($_POST['username']))
    {
       echo "Invalid username";
       exit;
    }
-	if( !preg_match('/^[\w_\-]+$/', $_POST['password']) )
+	if(!\WustlNews\is_valid_account_field($_POST['password']))
    {
       echo "<p class=\"error\">Invalid password</p>";
       exit;
@@ -82,6 +89,7 @@ if(isset($_POST['username']) and isset($_POST['password']))
 		
 		// Set session user and redirect to main page
       $_SESSION['username'] = $user;
+      $_SESSION['token'] = bin2hex(openssl_random_pseudo_bytes(32));
 		header("Location: WustlNews.php");
 		exit;
    }
